@@ -201,9 +201,9 @@ function addWord(lang){
     }
 }
 
-function chooseVoice(){
+function chooseVoice(){ // this is a part where we choose the voice for the non-japanese text
     let current = localStorage.voiceType;
-    $('#voiceType').empty();
+    $('#voiceType').empty(); // clear the list out
     let voices = speechSynthesis.getVoices()
     for(let voice of voices){
         if(current == voice.name){

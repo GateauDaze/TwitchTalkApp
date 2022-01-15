@@ -380,7 +380,9 @@ function statusUpdate(message, code) {
 
     M.toast({ html: m })
 }
-
+// I want to add a feature where it automatically finds the correct voice to use for each language determiend (given that language is installed...)
+// each 'voice' object comes with a language tag... so if we can somehow determine the language of the message and assign the tag, (e.g., en-US, ru-RU, or ja-JA)
+// search for the voice with the matching language tag in the list of voice, we can simplify the procedures...
 $(document).on('dblclick', '.d_text0', function () {
     let block_user = $(this).text().split(':')[0];
     let blocklist = JSON.parse(localStorage.blockUser);
