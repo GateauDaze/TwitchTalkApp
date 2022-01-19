@@ -3,6 +3,8 @@ const IRC = require('tmi.js');
 const Bouyomi = require('./js/bouyomi.js');
 const logger = require('./js/logger.js');
 const escRegex = require('regexp.escape');
+const LanguageDetect = require('languagedetect');
+
 var bouyomiServer = {};
 var conn = false;
 var client;
@@ -12,6 +14,7 @@ var speechList = [];
 var mainWindow = nw.Window.get();
 var uttr = new SpeechSynthesisUtterance();
 var channel_chips, chip_data = [];
+var langDetect = new LanguageDetect();
 
 // メイン画面のDOM読み込み完了後の初期化動作
 window.onload = function () {
@@ -249,6 +252,21 @@ function sayFunc(ch, userstate, message, channel) {
     if (JSON.parse(localStorage.blockUser)[from] == true) {
         if (isEnglish(nMessage) && JSON.parse(localStorage.useENvoice)) { // no kana was detected in the message
             logger.out("Message is not Japanese. Try to determine its language.");
+            var messageLanguageCode = checkLanguage(nMessage);
+            var availableVoice = speechSynthesis.getVoices();
+            for(var i = 0; i < availableVoice.length; i++)
+            {
+                if(availableVoice[i].lang == messageLanguageCode)
+                {
+                    uttr.voice = availableVoice[i];
+                    uttr.rate = localStorage.speed;
+                    uttr.pitch = localStorage.pitch;
+                    uttr.lang = messageLanguageCode;
+                    uttr.text = nMessage
+                    speechSynthesis.speak(uttr);
+                    console.log(uttr);
+                }
+            }
             if (isRussian(nMessage)) { // cyrillics were detected in the message
                 logger.out("Message is Russian. Try to use Speech API.");
                 for (let voice of voices) {
@@ -326,6 +344,31 @@ function loginTwitch() {
 function isEnglish(message) {
     return (message.match("^(.*[｡-ﾟ０-９ａ-ｚＡ-Ｚぁ-んァ-ヶ亜-黑一-龠々ー].*)*$")) ? false : true;
 };
+
+/*** Revamped Logic? ***/
+function isKana(message) // check whether message contains any kana... if yes, return true. if no, return false.
+{
+    return (message.match("^(.*[｡-ﾟ０-９ａ-ｚＡ-Ｚぁ-んァ-ヶ亜-黑一-龠々ー].*)*$")) ? false : true; // false if no kana, true if kana
+}
+
+function checkLanguage(message) // take the message, determine the language and return BCP47 Language Tag
+{
+    var language = langDetect.detect(message, 1)[0][0]; // get the closest language
+    var languageCode = 'jp-JP';
+    switch(language)
+    {
+        case 'english':
+            languageCode = 'en-US';
+            break;
+        case 'russian':
+            languageCode = 'ru-RU';
+            break;
+        default:
+            languageCode = 'jp-JP';
+            break;
+    }
+    return languageCode;
+}
 
 function isRussian(message) {
     return (/[а-яА-ЯЁё]/.test(message));
